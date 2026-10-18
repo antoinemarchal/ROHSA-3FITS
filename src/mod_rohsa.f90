@@ -77,6 +77,7 @@ contains
     real(xp), dimension(:,:,:), allocatable :: fit_params      !! parameters to optimize with cube mean at each iteration
     real(xp), dimension(:,:,:), allocatable :: std_cube          !! standard deviation map fo the cube computed by ROHSA with lb and ub
     real(xp), dimension(:,:,:), allocatable :: std_map           !! standard deviation map fo the cube computed by ROHSA with lb and ub
+    real(xp), dimension(:,:), allocatable :: std_map_2d           !! standard deviation map fo the cube computed by ROHSA with lb and ub
     real(xp), dimension(:,:,:), allocatable :: std_map_2           !! standard deviation map fo the cube computed by ROHSA with lb and ub
     real(xp), dimension(:), allocatable :: b_params            !! unknow average sigma
     real(xp), dimension(:), allocatable :: std_spect           !! std spectrum of the observation
@@ -269,13 +270,19 @@ contains
 
              if (n > 0 .and. n < nside) then
                 allocate(std_map(dim_cube(1), power, power))
-                
+                allocate(std_map_2d(power, power))
                 if (noise .eqv. .true.) then
                    call reshape_up(std_data, std_cube, dim_data, dim_cube)
                    call sum_array_square(power, std_cube, std_map)
-                   std_map = sqrt(std_map) / real(2**(2*(nside-n)),xp)
+                   ! std_map = sqrt(std_map) / real(2**(2*(nside-n)),xp)
+
+                   print*, "Compute noise on the fly in 2D and pass it as 3D noise."
+                   call set_stdmap(std_map_2d, cube_mean, lstd, ustd)
+                   do i=i, dim_cube(1)
+                      std_map(i,:,:) = std_map_2d
+                   end do
                 else
-                   print*, "no noise = .false. in this branch"
+                   print*, "no noise = .false. on this branch."
                    stop
                 end if
 
@@ -286,6 +293,7 @@ contains
                      m, kernel, iprint, std_map, lym, c_lym, norm_var)        
 
                 deallocate(std_map)
+                deallocate(std_map_2d)
              end if
           end if
           
@@ -356,6 +364,7 @@ contains
     allocate(std_map(dim_data(1), dim_data(2), dim_data(3)))
     
     if (noise .eqv. .true.) then
+       print*, "Use input 3D noise for final optimization."
        std_map = std_data
     else   
        print*, "no noise = .false. in this branch"

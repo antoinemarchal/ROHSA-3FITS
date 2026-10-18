@@ -26,7 +26,7 @@
     ,regul =  .true.
     ,descent =  .true.
     ,lstd =  1
-    ,ustd =  1
+    ,ustd =  20
     ,iprint =  -1
     ,iprint_init =  -1
     ,save_grid =  .false.
